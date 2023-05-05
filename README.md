@@ -4,6 +4,16 @@ This project implements the games shown in the following course with React and T
 
 - https://youtu.be/ec8vSKJuZTk
 
+## Games
+
+- [x] Rock Paper Scissors
+- [ ] Memory Game
+- [ ] Whac-a-mole
+- [ ] Breakout
+- [ ] Frogger
+- [ ] Connect Four
+- [ ] Space Invaders
+
 ## Getting Started
 
 First, run the development server:
