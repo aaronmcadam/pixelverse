@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-export default function Home() {
+export default function RockPaperScissors() {
   const [computerChoice, setComputerChoice] = useState<string>();
   const [playerChoice, setPlayerChoice] = useState<string | null>(null);
 
