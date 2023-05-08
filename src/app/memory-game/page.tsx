@@ -1,121 +1,109 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const cardArray = [
-  {
-    name: "fries",
-    img: "/images/fries.png",
-  },
-  {
-    name: "cheeseburger",
-    img: "/images/cheeseburger.png",
-  },
-  {
-    name: "hotdog",
-    img: "/images/hotdog.png",
-  },
-  {
-    name: "ice-cream",
-    img: "/images/ice-cream.png",
-  },
-  {
-    name: "milkshake",
-    img: "/images/milkshake.png",
-  },
-  {
-    name: "pizza",
-    img: "/images/pizza.png",
-  },
-  {
-    name: "fries",
-    img: "/images/fries.png",
-  },
-  {
-    name: "cheeseburger",
-    img: "/images/cheeseburger.png",
-  },
-  {
-    name: "hotdog",
-    img: "/images/hotdog.png",
-  },
-  {
-    name: "ice-cream",
-    img: "/images/ice-cream.png",
-  },
-  {
-    name: "milkshake",
-    img: "/images/milkshake.png",
-  },
-  {
-    name: "pizza",
-    img: "/images/pizza.png",
-  },
-];
-// Shuffle array
-cardArray.sort(() => 0.5 - Math.random());
+interface Card {
+  name: string;
+  img: string;
+  id: number;
+  isFlipped: boolean;
+}
+
+function generateCardArray(): Card[] {
+  const cardNames = [
+    "fries",
+    "cheeseburger",
+    "ice-cream",
+    "pizza",
+    "milkshake",
+    "hotdog",
+  ];
+  const cardPairs = cardNames.map((name) => ({
+    name,
+    img: `images/${name}.png`,
+  }));
+  const cardArray = [...cardPairs, ...cardPairs].map((card, index) => ({
+    ...card,
+    id: index,
+    isFlipped: false,
+  }));
+
+  return shuffle(cardArray);
+}
+
+function shuffle(array: Card[]) {
+  return array.sort(() => 0.5 - Math.random());
+}
 
 // We do this imperatively first and then refactor to a React way of doing things.
 // Instead of setting attributes, we should update the state so things rerender instead.
 export default function MemoryGame() {
-  const [cardsChosen, setCardsChosen] = useState<string[]>([]);
-  const [cardsChosenIds, setCardsChosenIds] = useState<number[]>([]);
-  const [cardsWon, setCardsWon] = useState<string[][]>([]);
+  const [cardArray, setCardArray] = useState<Card[]>(generateCardArray());
+  const [cardsChosen, setCardsChosen] = useState<number[]>([]);
+  const [cardsMatched, setCardsMatched] = useState<number[]>([]);
   const [result, setResult] = useState<string | null>(null);
 
-  function checkMatch() {
-    const cards = document.querySelectorAll("img");
-    const optionOneId = cardsChosenIds[0];
-    const optionTwoId = cardsChosenIds[1];
+  function checkForMatch() {
+    const [optionOneId, optionTwoId] = cardsChosen;
+    const cardOne = cardArray.find((card) => card.id === optionOneId);
+    const cardTwo = cardArray.find((card) => card.id === optionTwoId);
 
-    if (optionOneId === optionTwoId) {
-      alert("You chose the same card!");
-      cards[optionOneId].setAttribute("src", "/images/blank.png");
-      cards[optionTwoId].setAttribute("src", "/images/blank.png");
-    }
-
-    if (cardsChosen[0] === cardsChosen[1]) {
+    if (cardOne && cardTwo && cardOne.name === cardTwo.name) {
       alert("You found a match!");
-      cards[optionOneId].setAttribute("src", "/images/white.png");
-      cards[optionTwoId].setAttribute("src", "/images/white.png");
-      // TODO: remove event listeners on the cards.
-      // We don't want to remove the event listener that's handled by React, though.
-      // We can solve this in a different way later by using data instead of imperatively setting attributes.
-
-      setCardsWon((prev) => [...prev, cardsChosen]);
+      setCardsMatched([...cardsMatched, optionOneId, optionTwoId]);
     } else {
-      cards[optionOneId].setAttribute("src", "/images/blank.png");
-      cards[optionTwoId].setAttribute("src", "/images/blank.png");
+      // flip the cards back over
+      const newCardArray = cardArray.map((card) => {
+        // find the matching cards and flip them
+        if (card.id === optionOneId || card.id === optionTwoId) {
+          return {
+            ...card,
+            isFlipped: false,
+          };
+        } else {
+          return card;
+        }
+      });
+
+      setCardArray(newCardArray);
       alert("Sorry try again!");
     }
 
     setCardsChosen([]);
-    setCardsChosenIds([]);
+  }
 
-    setResult(cardsWon.length.toString());
+  useEffect(() => {
+    // calculate number of matched pairs
+    const matchedCount = cardsMatched.length / 2;
+    setResult(matchedCount.toString());
 
-    if (cardsWon.length === cardArray.length / 2) {
+    // if number of matched pairs equals half of the array, we know all pairs have been matched
+    if (matchedCount === cardArray.length / 2) {
       setResult("Congratulations, you found them all!");
     }
+  }, [cardsMatched, cardArray.length]);
+
+  function flipCard(cardId: number) {
+    if (cardsChosen.length === 2 || cardsChosen.includes(cardId)) {
+      return alert("You chose the same card!");
+    }
+
+    const newCardArray = cardArray.map((card) => {
+      if (card.id === cardId) {
+        return { ...card, isFlipped: true };
+      } else {
+        return card;
+      }
+    });
+
+    setCardArray(newCardArray);
+    setCardsChosen([...cardsChosen, cardId]);
   }
 
-  // TODO: play a sound when a card is flipped
-  const flipCard: React.MouseEventHandler<HTMLImageElement> = (event) => {
-    const element = event.currentTarget;
-    const id = Number(element.getAttribute("data-id"));
-    const card = cardArray[id];
-
-    setCardsChosen((prev) => [...prev, card.name]);
-    setCardsChosenIds((prev) => [...prev, id]);
-
-    element.setAttribute("src", card.img);
-  };
-
-  if (cardsChosen.length === 2) {
-    console.log("cards chosen");
-    window.setTimeout(checkMatch, 500);
-  }
-
-  console.log(cardsChosen);
+  useEffect(() => {
+    if (cardsChosen.length === 2) {
+      setTimeout(checkForMatch, 500);
+    }
+  }, [cardsChosen, checkForMatch]);
 
   return (
     <main className="min-h-screen p-24">
@@ -125,16 +113,19 @@ export default function MemoryGame() {
         role="list"
         className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       >
-        {cardArray.map((_card, index) => (
+        {cardArray.map((card) => (
           <li
-            key={index}
+            key={card.id}
             className="col-span-1 flex flex-col divide-y divide-gray-200 rounded-lg overflow-hidden bg-white text-center shadow"
           >
             <img
-              onClick={flipCard}
-              data-id={index}
-              alt="blank card"
-              src="/images/blank.png"
+              onClick={() => flipCard(card.id)}
+              alt="card"
+              src={
+                card.isFlipped || cardsMatched.includes(card.id)
+                  ? card.img
+                  : "images/blank.png"
+              }
             />
           </li>
         ))}
