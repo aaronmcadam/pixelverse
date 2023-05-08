@@ -42,35 +42,6 @@ export default function MemoryGame() {
   const [cardsMatched, setCardsMatched] = useState<number[]>([]);
   const [result, setResult] = useState<string | null>(null);
 
-  function checkForMatch() {
-    const [optionOneId, optionTwoId] = cardsChosen;
-    const cardOne = cardArray.find((card) => card.id === optionOneId);
-    const cardTwo = cardArray.find((card) => card.id === optionTwoId);
-
-    if (cardOne && cardTwo && cardOne.name === cardTwo.name) {
-      alert("You found a match!");
-      setCardsMatched([...cardsMatched, optionOneId, optionTwoId]);
-    } else {
-      // flip the cards back over
-      const newCardArray = cardArray.map((card) => {
-        // find the matching cards and flip them
-        if (card.id === optionOneId || card.id === optionTwoId) {
-          return {
-            ...card,
-            isFlipped: false,
-          };
-        } else {
-          return card;
-        }
-      });
-
-      setCardArray(newCardArray);
-      alert("Sorry try again!");
-    }
-
-    setCardsChosen([]);
-  }
-
   useEffect(() => {
     // calculate number of matched pairs
     const matchedCount = cardsMatched.length / 2;
@@ -105,10 +76,40 @@ export default function MemoryGame() {
   }
 
   useEffect(() => {
+    function checkForMatch() {
+      const [optionOneId, optionTwoId] = cardsChosen;
+      const cardOne = cardArray.find((card) => card.id === optionOneId);
+      const cardTwo = cardArray.find((card) => card.id === optionTwoId);
+
+      if (cardOne && cardTwo && cardOne.name === cardTwo.name) {
+        alert("You found a match!");
+        setCardsMatched([...cardsMatched, optionOneId, optionTwoId]);
+      } else {
+        // flip the cards back over
+        const newCardArray = cardArray.map((card) => {
+          // find the matching cards and flip them
+          if (card.id === optionOneId || card.id === optionTwoId) {
+            return {
+              ...card,
+              isFlipped: false,
+            };
+          } else {
+            return card;
+          }
+        });
+
+        setCardArray(newCardArray);
+        alert("Sorry try again!");
+      }
+
+      setCardsChosen([]);
+    }
     if (cardsChosen.length === 2) {
       setTimeout(checkForMatch, 500);
     }
-  }, [cardsChosen, checkForMatch]);
+  }, [cardArray, cardsChosen, cardsMatched]);
+
+  const backImage = "/images/back.png";
 
   return (
     <main className="min-h-screen p-24">
@@ -118,22 +119,27 @@ export default function MemoryGame() {
         role="list"
         className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       >
-        {cardArray.map((card) => (
-          <li
-            key={card.id}
-            className="col-span-1 flex flex-col divide-y divide-gray-200 rounded-lg overflow-hidden bg-white text-center shadow"
-          >
-            <img
-              onClick={() => flipCard(card.id)}
-              alt="card"
-              src={
-                card.isFlipped || cardsMatched.includes(card.id)
-                  ? card.img
-                  : "images/blank.png"
-              }
-            />
-          </li>
-        ))}
+        {cardArray.map((card) => {
+          const hasMatched = cardsMatched.includes(card.id);
+          const src = card.isFlipped ? card.img : backImage;
+          const altText =
+            card.isFlipped || hasMatched ? card.name : "back of card";
+
+          return (
+            <li
+              key={card.id}
+              className="col-span-1 flex flex-col divide-y divide-gray-200 rounded-lg overflow-hidden text-center shadow"
+            >
+              {!hasMatched ? (
+                <img
+                  onClick={() => flipCard(card.id)}
+                  alt={altText}
+                  src={src}
+                />
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </main>
   );
