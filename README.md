@@ -7,7 +7,7 @@ This project implements the games shown in the following course with React and T
 ## Games
 
 - [x] Rock Paper Scissors
-- [ ] Memory Game
+- [x] Memory Game
 - [ ] Whac-a-mole
 - [ ] Breakout
 - [ ] Frogger
