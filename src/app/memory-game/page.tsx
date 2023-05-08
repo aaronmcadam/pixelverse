@@ -83,6 +83,11 @@ export default function MemoryGame() {
   }, [cardsMatched, cardArray.length]);
 
   function flipCard(cardId: number) {
+    if (cardsMatched.includes(cardId)) {
+      // Card has already been matched, ignore click event
+      return;
+    }
+
     if (cardsChosen.length === 2 || cardsChosen.includes(cardId)) {
       return alert("You chose the same card!");
     }
