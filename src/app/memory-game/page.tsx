@@ -34,8 +34,6 @@ function shuffle(array: Card[]) {
   return array.sort(() => 0.5 - Math.random());
 }
 
-// We do this imperatively first and then refactor to a React way of doing things.
-// Instead of setting attributes, we should update the state so things rerender instead.
 export default function MemoryGame() {
   const [cardArray, setCardArray] = useState<Card[]>(generateCardArray());
   const [cardsChosen, setCardsChosen] = useState<number[]>([]);
@@ -52,28 +50,6 @@ export default function MemoryGame() {
       setResult("Congratulations, you found them all!");
     }
   }, [cardsMatched, cardArray.length]);
-
-  function flipCard(cardId: number) {
-    if (cardsMatched.includes(cardId)) {
-      // Card has already been matched, ignore click event
-      return;
-    }
-
-    if (cardsChosen.length === 2 || cardsChosen.includes(cardId)) {
-      return alert("You chose the same card!");
-    }
-
-    const newCardArray = cardArray.map((card) => {
-      if (card.id === cardId) {
-        return { ...card, isFlipped: true };
-      } else {
-        return card;
-      }
-    });
-
-    setCardArray(newCardArray);
-    setCardsChosen([...cardsChosen, cardId]);
-  }
 
   useEffect(() => {
     function checkForMatch() {
@@ -108,6 +84,28 @@ export default function MemoryGame() {
       setTimeout(checkForMatch, 500);
     }
   }, [cardArray, cardsChosen, cardsMatched]);
+
+  function flipCard(cardId: number) {
+    if (cardsMatched.includes(cardId)) {
+      // Card has already been matched, ignore click event
+      return;
+    }
+
+    if (cardsChosen.length === 2 || cardsChosen.includes(cardId)) {
+      return alert("You chose the same card!");
+    }
+
+    const newCardArray = cardArray.map((card) => {
+      if (card.id === cardId) {
+        return { ...card, isFlipped: true };
+      } else {
+        return card;
+      }
+    });
+
+    setCardArray(newCardArray);
+    setCardsChosen([...cardsChosen, cardId]);
+  }
 
   const backImage = "/images/back.png";
 
