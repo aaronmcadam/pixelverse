@@ -55,10 +55,12 @@ export default function RockPaperScissors() {
   }
 
   return (
-    <main className="min-h-screen p-24">
-      <h1>Rock Paper Scissors</h1>
-      <h2>Computer choice: {computerChoice}</h2>
-      <h2>Player choice: {playerChoice}</h2>
+    <div className="mt-8">
+      <h2 className="text-2xl font-bold leading-7 text-white sm:truncate sm:text-3xl sm:tracking-tight">
+        Rock Paper Scissors
+      </h2>
+      <p>Computer choice: {computerChoice}</p>
+      <p>Player choice: {playerChoice}</p>
       <div className="flex gap-2">
         <button
           onClick={handleClick}
@@ -86,6 +88,6 @@ export default function RockPaperScissors() {
         </button>
       </div>
       {playerChoice ? <div>Result: {getResult()}</div> : null}
-    </main>
+    </div>
   );
 }

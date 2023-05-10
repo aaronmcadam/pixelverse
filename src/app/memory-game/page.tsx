@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 
-interface Card {
+type Card = {
   name: string;
   img: string;
   id: number;
   isFlipped: boolean;
-}
+};
 
 function generateCardArray(): Card[] {
   const cardNames = [
@@ -110,8 +110,10 @@ export default function MemoryGame() {
   const backImage = "/images/back.png";
 
   return (
-    <main className="min-h-screen p-24">
-      <h1>Memory Game</h1>
+    <div className="mt-8">
+      <h2 className="text-2xl font-bold leading-7 text-white sm:truncate sm:text-3xl sm:tracking-tight">
+        Memory Game
+      </h2>
       <p>Score: {result}</p>
       <ul
         role="list"
@@ -139,6 +141,6 @@ export default function MemoryGame() {
           );
         })}
       </ul>
-    </main>
+    </div>
   );
 }
