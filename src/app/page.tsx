@@ -13,6 +13,12 @@ const games = [
     initials: "MG",
     color: "bg-orange-600",
   },
+  {
+    name: "Whac-a-mole",
+    url: "whac-a-mole",
+    initials: "WM",
+    color: "bg-blue-600",
+  },
 ];
 
 export default function Home() {
