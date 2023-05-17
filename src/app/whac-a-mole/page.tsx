@@ -1,6 +1,6 @@
 "use client";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Square = {
   id: number;
@@ -46,8 +46,11 @@ export default function WhacAMole() {
       isMole: false,
     },
   ]);
-  const [result, setResult] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState(60);
+  const [score, setScore] = useState(0);
+  const [result, setResult] = useState("");
+  const [timeRemaining, setTimeRemaining] = useState(3);
+  const randomRef = useRef<number | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     function randomSquare() {
@@ -72,40 +75,56 @@ export default function WhacAMole() {
       );
     }
 
-    const interval = window.setInterval(randomSquare, 3000);
-
-    // if (timeRemaining === 0) {
-    //   window.clearInterval(interval);
-    // }
+    randomRef.current = window.setInterval(randomSquare, 3000);
 
     return () => {
-      window.clearInterval(interval);
+      if (randomRef.current) {
+        window.clearInterval(randomRef.current);
+      }
     };
   }, [squares]);
 
-  // When we click a Mole square, the timer gets blocked for a second. How can we avoid this issue?
+  // The interval was getting reset every time the result changed, so that was causing a delay in the countdown timer.
+  // Moving the GAME OVER logic into its own effect solved the problem.
   useEffect(() => {
     function countDown() {
       setTimeRemaining((prev) => prev - 1);
     }
 
-    const interval = window.setInterval(countDown, 1000);
-
-    if (timeRemaining === 0) {
-      window.clearInterval(interval);
-      alert(`GAME OVER! Your final score is: ${result}`);
-    }
+    timerRef.current = window.setInterval(countDown, 1000);
 
     return () => {
-      window.clearInterval(interval);
+      if (timerRef.current) {
+        window.clearInterval(timerRef.current);
+      }
     };
-  }, [result, timeRemaining]);
+  }, []);
+
+  // When the GAME OVER alert shows, the player sees "time remaining: 1", even though the value is 0.
+  // Browsers generally block UI updates until an alert is dismissed, so the player needs to close the alert before the value will change.
+  // We might need to use a custom modal for messaging instead, or just update a string value in state. We've chosen the second option for now.
+  useEffect(() => {
+    if (timeRemaining === 0) {
+      if (randomRef.current) {
+        window.clearInterval(randomRef.current);
+      }
+
+      if (timerRef.current) {
+        window.clearInterval(timerRef.current);
+      }
+
+      // alert(`GAME OVER! Your final score is: ${score}`);
+      setResult(`GAME OVER! Your final score is: ${score}`);
+    }
+  }, [timeRemaining, score]);
 
   function handleClick(square: Square) {
-    console.log(square);
+    if (timeRemaining === 0) {
+      return;
+    }
 
     if (square.isMole) {
-      setResult((prev) => prev + 1);
+      setScore((prev) => prev + 1);
     }
   }
 
@@ -114,8 +133,9 @@ export default function WhacAMole() {
       <h2 className="text-2xl font-bold leading-7 text-white sm:truncate sm:text-3xl sm:tracking-tight">
         Whac-a-mole
       </h2>
-      <p>Score: {result}</p>
+      <p>Score: {score}</p>
       <p>Time remaining: {timeRemaining}</p>
+      <p>Result: {result}</p>
       <ul role="list" className="grid grid-cols-1 md:grid-cols-3 h-2/3">
         {squares.map((square) => {
           return (
