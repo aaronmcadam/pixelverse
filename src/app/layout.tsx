@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <main className="min-h-screen bg-gray-900 p-8 text-white">
+        <main className="h-screen bg-gray-900 p-8 text-white">
           <a href="/">
             <h1 className="text-xl font-bold leading-7 text-white sm:truncate sm:text-2xl sm:tracking-tight">
               Pixelverse

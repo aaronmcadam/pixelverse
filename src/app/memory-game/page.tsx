@@ -19,7 +19,7 @@ function generateCardArray(): Card[] {
   ];
   const cardPairs = cardNames.map((name) => ({
     name,
-    img: `images/${name}.png`,
+    img: `images/memory-game/${name}.png`,
   }));
   const cardArray = [...cardPairs, ...cardPairs].map((card, index) => ({
     ...card,
