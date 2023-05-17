@@ -4,85 +4,69 @@ import { useEffect, useRef, useState } from "react";
 
 type Square = {
   id: number;
-  isMole: boolean;
 };
 
+const squares: Square[] = [
+  {
+    id: 1,
+  },
+  {
+    id: 2,
+  },
+  {
+    id: 3,
+  },
+  {
+    id: 4,
+  },
+  {
+    id: 5,
+  },
+  {
+    id: 6,
+  },
+  {
+    id: 7,
+  },
+  {
+    id: 8,
+  },
+  {
+    id: 9,
+  },
+];
+
+const MOLE_VISIBLE_TIME_MS = 1500;
+const TIMER_START_SECONDS = 60;
+
 export default function WhacAMole() {
-  const [squares, setSquares] = useState<Square[]>([
-    {
-      id: 1,
-      isMole: false,
-    },
-    {
-      id: 2,
-      isMole: false,
-    },
-    {
-      id: 3,
-      isMole: true,
-    },
-    {
-      id: 4,
-      isMole: false,
-    },
-    {
-      id: 5,
-      isMole: false,
-    },
-    {
-      id: 6,
-      isMole: false,
-    },
-    {
-      id: 7,
-      isMole: false,
-    },
-    {
-      id: 8,
-      isMole: false,
-    },
-    {
-      id: 9,
-      isMole: false,
-    },
-  ]);
+  const [molePosition, setMolePosition] = useState(1);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState("");
-  const [timeRemaining, setTimeRemaining] = useState(3);
+  const [timeRemaining, setTimeRemaining] = useState(TIMER_START_SECONDS);
   const randomRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     function randomSquare() {
-      const randomId = squares.map((s) => s.id)[
-        Math.floor(Math.random() * squares.length)
-      ];
+      const randomSquare = squares[Math.floor(Math.random() * squares.length)];
 
-      setSquares((prev) =>
-        prev.map((square) => {
-          if (square.id === randomId) {
-            return {
-              ...square,
-              isMole: true,
-            };
-          }
+      // Avoid unneccessary rerenders when the new position is the same as the current one.
+      if (randomSquare.id === molePosition) {
+        return;
+      }
 
-          return {
-            ...square,
-            isMole: false,
-          };
-        })
-      );
+      setMolePosition(randomSquare.id);
     }
 
-    randomRef.current = window.setInterval(randomSquare, 3000);
+    randomRef.current = window.setInterval(randomSquare, MOLE_VISIBLE_TIME_MS);
 
     return () => {
       if (randomRef.current) {
         window.clearInterval(randomRef.current);
       }
     };
-  }, [squares]);
+  }, [molePosition]);
 
   // The interval was getting reset every time the result changed, so that was causing a delay in the countdown timer.
   // Moving the GAME OVER logic into its own effect solved the problem.
@@ -118,12 +102,12 @@ export default function WhacAMole() {
     }
   }, [timeRemaining, score]);
 
-  function handleClick(square: Square) {
+  function handleClick(isMole: boolean) {
     if (timeRemaining === 0) {
       return;
     }
 
-    if (square.isMole) {
+    if (isMole) {
       setScore((prev) => prev + 1);
     }
   }
@@ -138,18 +122,20 @@ export default function WhacAMole() {
       <p>Result: {result}</p>
       <ul role="list" className="grid grid-cols-1 md:grid-cols-3 h-2/3">
         {squares.map((square) => {
+          const isMole = square.id === molePosition;
+
           return (
             <li
               key={square.id}
               className={clsx(
                 "overflow-hidden text-center border-gray-700 border",
-                square.isMole
+                isMole
                   ? "bg-[url(/images/whac-a-mole/mole.jpg)] bg-no-repeat bg-cover"
                   : ""
               )}
             >
               <button
-                onClick={() => handleClick(square)}
+                onClick={() => handleClick(isMole)}
                 className="w-full h-full"
               >
                 {square.id}
