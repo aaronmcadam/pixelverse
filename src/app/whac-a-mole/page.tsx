@@ -2,41 +2,8 @@
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 
-type Square = {
-  id: number;
-};
-
-const squares: Square[] = [
-  {
-    id: 1,
-  },
-  {
-    id: 2,
-  },
-  {
-    id: 3,
-  },
-  {
-    id: 4,
-  },
-  {
-    id: 5,
-  },
-  {
-    id: 6,
-  },
-  {
-    id: 7,
-  },
-  {
-    id: 8,
-  },
-  {
-    id: 9,
-  },
-];
-
-const MOLE_VISIBLE_TIME_MS = 1500;
+const squares = Array.from({ length: 9 }, (_, index) => index + 1);
+const MOLE_VISIBLE_TIME_MILLISECONDS = 1500;
 const TIMER_START_SECONDS = 60;
 
 export default function WhacAMole() {
@@ -51,15 +18,20 @@ export default function WhacAMole() {
     function randomSquare() {
       const randomSquare = squares[Math.floor(Math.random() * squares.length)];
 
-      // Avoid unneccessary rerenders when the new position is the same as the current one.
-      if (randomSquare.id === molePosition) {
-        return;
-      }
+      setMolePosition((currentPosition) => {
+        // Avoid unneccessary rerenders when the new position is the same as the current one.
+        if (randomSquare === currentPosition) {
+          return currentPosition;
+        }
 
-      setMolePosition(randomSquare.id);
+        return randomSquare;
+      });
     }
 
-    randomRef.current = window.setInterval(randomSquare, MOLE_VISIBLE_TIME_MS);
+    randomRef.current = window.setInterval(
+      randomSquare,
+      MOLE_VISIBLE_TIME_MILLISECONDS
+    );
 
     return () => {
       if (randomRef.current) {
@@ -113,33 +85,38 @@ export default function WhacAMole() {
   }
 
   return (
-    <div className="pt-8 h-full">
+    <div className="py-8 h-full flex flex-col">
       <h2 className="text-2xl font-bold leading-7 text-white sm:truncate sm:text-3xl sm:tracking-tight">
         Whac-a-mole
       </h2>
       <p>Score: {score}</p>
       <p>Time remaining: {timeRemaining}</p>
       <p>Result: {result}</p>
-      <ul role="list" className="grid grid-cols-1 md:grid-cols-3 h-2/3">
+      <ul
+        role="list"
+        className="grid grid-cols-3 flex-grow border-gray-700 border"
+      >
         {squares.map((square) => {
-          const isMole = square.id === molePosition;
+          const isMole = square === molePosition;
+          // We want to avoid double borders in the grid, so we use
+          // these values to conditionally apply right and bottom borders.
+          const isLastColumn = square % 3 === 0;
+          const isLastRow = square > 6;
 
           return (
             <li
-              key={square.id}
-              className={clsx(
-                "overflow-hidden text-center border-gray-700 border",
-                isMole
-                  ? "bg-[url(/images/whac-a-mole/mole.jpg)] bg-no-repeat bg-cover"
-                  : ""
-              )}
+              key={square}
+              className={clsx("overflow-hidden text-center border-gray-700", {
+                "bg-[url(/images/whac-a-mole/mole.jpg)] bg-no-repeat bg-cover":
+                  isMole,
+                "border-r": !isLastColumn,
+                "border-b": !isLastRow,
+              })}
             >
               <button
                 onClick={() => handleClick(isMole)}
                 className="w-full h-full"
-              >
-                {square.id}
-              </button>
+              />
             </li>
           );
         })}
