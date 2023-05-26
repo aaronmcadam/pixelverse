@@ -19,6 +19,12 @@ const games = [
     initials: "WM",
     color: "bg-blue-600",
   },
+  {
+    name: "Breakout",
+    url: "breakout",
+    initials: "B",
+    color: "bg-red-600",
+  },
 ];
 
 export default function Home() {
