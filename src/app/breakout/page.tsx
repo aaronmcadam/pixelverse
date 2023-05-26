@@ -54,6 +54,10 @@ export default function Breakout() {
 
   useEffect(() => {
     function movePlayer(event: KeyboardEvent) {
+      if (result === "GAME_OVER") {
+        return;
+      }
+
       switch (event.key) {
         case "ArrowLeft":
           setPaddlePosition((prev) => {
@@ -88,7 +92,7 @@ export default function Breakout() {
     return () => {
       document.removeEventListener("keydown", movePlayer);
     };
-  }, []);
+  }, [result]);
 
   useEffect(() => {
     ballAnimationRef.current = window.setInterval(() => {
@@ -127,8 +131,7 @@ export default function Breakout() {
       }
 
       // reset game state
-      setResult("Game Over");
-      // TODO: disable paddle
+      setResult("GAME_OVER");
     }
   }, [ballPosition]);
 
