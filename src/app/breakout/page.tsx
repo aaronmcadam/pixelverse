@@ -49,7 +49,6 @@ export default function Breakout() {
   const [ballPosition, setBallPosition] = useState(ballStart);
   const [result, setResult] = useState("");
   const ballAnimationRef = useRef<number | null>(null);
-
   const xDirectionRef = useRef(2);
   const yDirectionRef = useRef(2);
 
