@@ -95,32 +95,19 @@ export default function Breakout() {
     ballAnimationRef.current = window.setInterval(() => {
       setBallPosition((prev) => {
         const [xAxis, yAxis] = prev;
+        const nextXAxis = xAxis + xDirectionRef.current;
+        const nextYAxis = yAxis + yDirectionRef.current;
 
         // Check for wall collisions
-        if (
-          xAxis >= BOARD_WIDTH - BALL_DIAMETER ||
-          yAxis >= BOARD_HEIGHT - BALL_DIAMETER ||
-          xAxis <= 0
-        ) {
-          // we've hit a wall, so change direction
-          if (xDirectionRef.current === 2 && yDirectionRef.current === 2) {
-            yDirectionRef.current = -2;
-          }
-
-          if (xDirectionRef.current === 2 && yDirectionRef.current === -2) {
-            xDirectionRef.current = -2;
-          }
-
-          if (xDirectionRef.current === -2 && yDirectionRef.current === -2) {
-            yDirectionRef.current = 2;
-          }
-
-          if (xDirectionRef.current === -2 && yDirectionRef.current === 2) {
-            xDirectionRef.current = 2;
-          }
+        if (nextXAxis >= BOARD_WIDTH - BALL_DIAMETER || nextXAxis <= 0) {
+          xDirectionRef.current = -xDirectionRef.current;
         }
 
-        return [xAxis + xDirectionRef.current, yAxis + yDirectionRef.current];
+        if (nextYAxis >= BOARD_HEIGHT - BALL_DIAMETER || nextYAxis <= 0) {
+          yDirectionRef.current = -yDirectionRef.current;
+        }
+
+        return [nextXAxis, nextYAxis];
       });
     }, 30);
 
