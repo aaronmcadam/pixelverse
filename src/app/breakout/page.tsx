@@ -24,7 +24,7 @@ class Block {
   }
 }
 
-const blocks = [
+const initialBlocks = [
   new Block(10, 270),
   new Block(120, 270),
   new Block(230, 270),
@@ -45,6 +45,7 @@ const blocks = [
 ];
 
 export default function Breakout() {
+  const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [paddlePosition, setPaddlePosition] = useState(paddleStart);
   const [ballPosition, setBallPosition] = useState(ballStart);
   const [result, setResult] = useState("");
@@ -101,15 +102,6 @@ export default function Breakout() {
         const nextXAxis = xAxis + xDirectionRef.current;
         const nextYAxis = yAxis + yDirectionRef.current;
 
-        // Check for wall collisions
-        if (nextXAxis >= BOARD_WIDTH - BALL_DIAMETER || nextXAxis <= 0) {
-          xDirectionRef.current = -xDirectionRef.current;
-        }
-
-        if (nextYAxis >= BOARD_HEIGHT - BALL_DIAMETER || nextYAxis <= 0) {
-          yDirectionRef.current = -yDirectionRef.current;
-        }
-
         return [nextXAxis, nextYAxis];
       });
     }, 30);
@@ -120,6 +112,43 @@ export default function Breakout() {
       }
     };
   }, []);
+
+  // change direction
+  useEffect(() => {
+    const [xAxis, yAxis] = ballPosition;
+
+    // Change ball direction if the ball hits a wall
+    if (xAxis >= BOARD_WIDTH - BALL_DIAMETER || xAxis <= 0) {
+      xDirectionRef.current = -xDirectionRef.current;
+    }
+
+    if (yAxis >= BOARD_HEIGHT - BALL_DIAMETER || yAxis <= 0) {
+      yDirectionRef.current = -yDirectionRef.current;
+    }
+  }, [ballPosition]);
+
+  // remove the block if we hit it
+  useEffect(() => {
+    const [xAxis, yAxis] = ballPosition;
+
+    for (let i = 0; i < blocks.length; ++i) {
+      if (
+        xAxis > blocks[i].bottomLeft[0] &&
+        xAxis < blocks[i].bottomRight[0] &&
+        yAxis > blocks[i].bottomLeft[1] &&
+        yAxis < blocks[i].topLeft[1]
+      ) {
+        console.log("we hit a block");
+        setBlocks((prev) => prev.filter((_block, index) => index !== i));
+
+        // Reverse the ball direction upon block collision
+        xDirectionRef.current = -xDirectionRef.current;
+        yDirectionRef.current = -yDirectionRef.current;
+
+        break; // exit the loop after the first hit
+      }
+    }
+  }, [ballPosition, blocks]);
 
   // handle game over
   useEffect(() => {
