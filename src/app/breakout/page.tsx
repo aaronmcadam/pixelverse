@@ -108,7 +108,7 @@ export default function Breakout() {
 
     return () => {
       if (gameLoopRef.current) {
-        window.cancelAnimationFrame(gameLoopRef.current);
+        window.clearInterval(gameLoopRef.current);
       }
     };
   }, []);
