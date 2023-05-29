@@ -1,5 +1,4 @@
 "use client";
-import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
 
 const BLOCK_WIDTH = 100;
@@ -50,7 +49,7 @@ export default function Breakout() {
   const [ballPosition, setBallPosition] = useState(ballStart);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState("");
-  const ballAnimationRef = useRef<number | null>(null);
+  const gameLoopRef = useRef<number | null>(null);
   const xDirectionRef = useRef(-2);
   const yDirectionRef = useRef(2);
 
@@ -97,7 +96,7 @@ export default function Breakout() {
   }, [result]);
 
   useEffect(() => {
-    ballAnimationRef.current = window.setInterval(() => {
+    gameLoopRef.current = window.setInterval(() => {
       setBallPosition((prev) => {
         const [xAxis, yAxis] = prev;
         const nextXAxis = xAxis + xDirectionRef.current;
@@ -108,8 +107,8 @@ export default function Breakout() {
     }, 30);
 
     return () => {
-      if (ballAnimationRef.current) {
-        window.clearInterval(ballAnimationRef.current);
+      if (gameLoopRef.current) {
+        window.cancelAnimationFrame(gameLoopRef.current);
       }
     };
   }, []);
@@ -143,7 +142,6 @@ export default function Breakout() {
       ];
 
       if (xAxis >= left && xAxis <= right && yAxis >= bottom && yAxis <= top) {
-        console.log("we hit a block");
         setBlocks((prev) => prev.filter((_block, index) => index !== i));
         changeDirection();
         setScore((prev) => prev + 1);
@@ -186,8 +184,8 @@ export default function Breakout() {
     const [_xAxis, yAxis] = ballPosition;
 
     if (yAxis <= 0) {
-      if (ballAnimationRef.current) {
-        window.clearInterval(ballAnimationRef.current);
+      if (gameLoopRef.current) {
+        window.clearInterval(gameLoopRef.current);
       }
 
       // reset game state
@@ -198,8 +196,8 @@ export default function Breakout() {
   // handle win
   useEffect(() => {
     if (blocks.length === 0) {
-      if (ballAnimationRef.current) {
-        window.clearInterval(ballAnimationRef.current);
+      if (gameLoopRef.current) {
+        window.clearInterval(gameLoopRef.current);
       }
 
       // reset game state
