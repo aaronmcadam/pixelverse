@@ -8,8 +8,8 @@ This project implements the games shown in the following course with React and T
 
 - [x] Rock Paper Scissors
 - [x] Memory Game
-- [ ] Whac-a-mole
-- [ ] Breakout
+- [x] Whac-a-mole
+- [x] Breakout
 - [ ] Frogger
 - [ ] Connect Four
 - [ ] Space Invaders
