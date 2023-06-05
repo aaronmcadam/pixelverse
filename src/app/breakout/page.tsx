@@ -1,13 +1,17 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 
+// Constants
 const BLOCK_WIDTH = 100;
 const BLOCK_HEIGHT = 20;
 const BOARD_WIDTH = 560;
 const BOARD_HEIGHT = 300;
 const BALL_DIAMETER = 20;
-const paddleStart = [230, 10];
-const ballStart = [270, 30];
+const PADDLE_START = [230, 10];
+const PADDLE_STEP = 20;
+const BALL_START = [270, 30];
+const INITIAL_SPEED = 4;
+const GAME_LOOP_INTERVAL = 20;
 
 class Block {
   bottomLeft: [number, number];
@@ -20,6 +24,17 @@ class Block {
     this.bottomRight = [xAxis + BLOCK_WIDTH, yAxis];
     this.topLeft = [xAxis, yAxis + BLOCK_HEIGHT];
     this.topRight = [xAxis + BLOCK_WIDTH, yAxis + BLOCK_HEIGHT];
+  }
+
+  hit(x: number, y: number) {
+    const [left, right, top, bottom] = [
+      this.bottomLeft[0],
+      this.bottomRight[0],
+      this.topLeft[1],
+      this.bottomLeft[1],
+    ];
+
+    return x >= left && x <= right && y >= bottom && y <= top;
   }
 }
 
@@ -43,46 +58,83 @@ const initialBlocks = [
   new Block(450, 210),
 ];
 
-export default function Breakout() {
-  const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
-  const [paddlePosition, setPaddlePosition] = useState(paddleStart);
-  const [ballPosition, setBallPosition] = useState(ballStart);
-  const [score, setScore] = useState(0);
-  const [result, setResult] = useState("");
-  const gameLoopRef = useRef<number | null>(null);
-  const xDirectionRef = useRef(-2);
-  const yDirectionRef = useRef(2);
+const initialState = {
+  blocks: initialBlocks,
+  paddlePosition: PADDLE_START,
+  ballPosition: BALL_START,
+  xDirection: INITIAL_SPEED,
+  yDirection: INITIAL_SPEED,
+  score: 0,
+  result: "",
+};
 
-  useEffect(() => {
-    function movePlayer(event: KeyboardEvent) {
-      if (result === "GAME_OVER" || result === "GAME_WON") {
-        return;
+type State = typeof initialState;
+type ActionType =
+  | "MOVE_PADDLE"
+  | "UPDATE_BALL_POSITION"
+  | "CHANGE_X_DIRECTION"
+  | "CHANGE_Y_DIRECTION"
+  | "REMOVE_BLOCK"
+  | "INCREMENT_SCORE"
+  | "SET_RESULT";
+type Action = {
+  type: ActionType;
+  payload?: any;
+};
+
+// Reducer to manage game state
+function gameReducer(state: State, action: Action) {
+  switch (action.type) {
+    case "MOVE_PADDLE": {
+      const nextPosition = state.paddlePosition[0] + action.payload;
+
+      // Check that the paddle isn't moving off the board
+      if (nextPosition < 0 || nextPosition > BOARD_WIDTH - BLOCK_WIDTH) {
+        return state;
       }
 
+      return {
+        ...state,
+        paddlePosition: [nextPosition, state.paddlePosition[1]],
+      };
+    }
+    case "UPDATE_BALL_POSITION":
+      return { ...state, ballPosition: action.payload };
+    case "CHANGE_X_DIRECTION":
+      return { ...state, xDirection: -state.xDirection };
+    case "CHANGE_Y_DIRECTION":
+      return { ...state, yDirection: -state.yDirection };
+    case "REMOVE_BLOCK":
+      return {
+        ...state,
+        blocks: state.blocks.filter((_, index) => index !== action.payload),
+      };
+    case "INCREMENT_SCORE":
+      return { ...state, score: state.score + 1 };
+    case "SET_RESULT":
+      return { ...state, result: action.payload };
+    default:
+      throw new Error(`Unknown action: ${action.type}`);
+  }
+}
+
+export default function Breakout() {
+  const [state, dispatch] = useReducer(gameReducer, initialState);
+
+  // Moving the player
+  useEffect(() => {
+    function movePlayer(event: KeyboardEvent) {
       switch (event.key) {
         case "ArrowLeft":
-          setPaddlePosition((prev) => {
-            const nextPosition = prev[0] - 20;
-
-            // Don't let the paddle go off the board
-            if (nextPosition > 0) {
-              return [nextPosition, prev[1]];
-            }
-
-            return prev;
+          dispatch({
+            type: "MOVE_PADDLE",
+            payload: -PADDLE_STEP,
           });
           break;
-
         case "ArrowRight":
-          setPaddlePosition((prev) => {
-            const nextPosition = prev[0] + 20;
-
-            // Don't let the paddle go off the board
-            if (nextPosition < BOARD_WIDTH - BLOCK_WIDTH) {
-              return [nextPosition, prev[1]];
-            }
-
-            return prev;
+          dispatch({
+            type: "MOVE_PADDLE",
+            payload: PADDLE_STEP,
           });
           break;
       }
@@ -90,170 +142,118 @@ export default function Breakout() {
 
     document.addEventListener("keydown", movePlayer);
 
-    return () => {
-      document.removeEventListener("keydown", movePlayer);
-    };
-  }, [result]);
-
-  useEffect(() => {
-    gameLoopRef.current = window.setInterval(() => {
-      setBallPosition((prev) => {
-        const [xAxis, yAxis] = prev;
-        const nextXAxis = xAxis + xDirectionRef.current;
-        const nextYAxis = yAxis + yDirectionRef.current;
-
-        return [nextXAxis, nextYAxis];
-      });
-    }, 20);
-
-    return () => {
-      if (gameLoopRef.current) {
-        window.clearInterval(gameLoopRef.current);
-      }
-    };
+    return () => document.removeEventListener("keydown", movePlayer);
   }, []);
 
-  // change direction
-  // ensure that the direction change occurs only once per collision.
+  // Game Loop
   useEffect(() => {
-    const [xAxis, yAxis] = ballPosition;
+    const intervalId = window.setInterval(() => {
+      const [ballXAxis, ballYAxis] = state.ballPosition;
+      const nextXAxis = ballXAxis + state.xDirection;
+      const nextYAxis = ballYAxis + state.yDirection;
 
-    // Change ball direction if the ball hits a wall
-    if (xAxis >= BOARD_WIDTH - BALL_DIAMETER || xAxis <= 0) {
-      xDirectionRef.current = -xDirectionRef.current;
+      dispatch({
+        type: "UPDATE_BALL_POSITION",
+        payload: [nextXAxis, nextYAxis],
+      });
+    }, GAME_LOOP_INTERVAL);
+
+    if (state.result === "GAME_OVER") {
+      window.clearInterval(intervalId);
     }
 
-    if (yAxis >= BOARD_HEIGHT - BALL_DIAMETER || yAxis <= 0) {
-      yDirectionRef.current = -yDirectionRef.current;
-    }
-  }, [ballPosition]);
+    return () => window.clearInterval(intervalId);
+  }, [state]);
 
-  // remove the block if we hit it
+  // Change Ball Direction if Hit the Wall
   useEffect(() => {
-    const [xAxis, yAxis] = ballPosition;
+    const [ballXAxis, ballYAxis] = state.ballPosition;
 
-    for (let i = 0; i < blocks.length; ++i) {
-      const block = blocks[i];
-      const [left, right, top, bottom] = [
-        block.bottomLeft[0],
-        block.bottomRight[0],
-        block.topLeft[1],
-        block.bottomLeft[1],
-      ];
+    if (ballXAxis >= BOARD_WIDTH - BALL_DIAMETER || ballXAxis <= 0) {
+      dispatch({ type: "CHANGE_X_DIRECTION" });
+    }
 
-      const ballRadius = BALL_DIAMETER / 2;
+    if (ballYAxis >= BOARD_HEIGHT - BALL_DIAMETER || ballYAxis <= 0) {
+      dispatch({ type: "CHANGE_Y_DIRECTION" });
+    }
+  }, [state.ballPosition]);
 
-      const isColliding =
-        xAxis + ballRadius >= left &&
-        xAxis - ballRadius <= right &&
-        yAxis + ballRadius >= bottom &&
-        yAxis - ballRadius <= top;
+  // Remove Block and Update Score if Hit
+  useEffect(() => {
+    const [ballXAxis, ballYAxis] = state.ballPosition;
 
-      if (isColliding) {
-        // Change direction based on where the ball hits the block
-        const hitFromLeft = Math.abs(xAxis + ballRadius - left);
-        const hitFromRight = Math.abs(xAxis - ballRadius - right);
-        const hitFromTop = Math.abs(yAxis - ballRadius - top);
-        const hitFromBottom = Math.abs(yAxis + ballRadius - bottom);
+    for (let i = 0; i < state.blocks.length; ++i) {
+      let block = state.blocks[i];
 
-        const minHit = Math.min(
-          hitFromLeft,
-          hitFromRight,
-          hitFromTop,
-          hitFromBottom
-        );
-
-        switch (minHit) {
-          case hitFromLeft:
-          case hitFromRight:
-            xDirectionRef.current = -xDirectionRef.current;
-            break;
-          case hitFromTop:
-          case hitFromBottom:
-            yDirectionRef.current = -yDirectionRef.current;
-            break;
-        }
-
-        setBlocks((prev) => prev.filter((_block, index) => index !== i));
-        setScore((prev) => prev + 1);
-
-        break; // exit the loop after the first hit
+      if (block.hit(ballXAxis, ballYAxis)) {
+        dispatch({ type: "REMOVE_BLOCK", payload: i });
+        dispatch({ type: "CHANGE_Y_DIRECTION" });
+        dispatch({ type: "INCREMENT_SCORE" });
       }
     }
-  }, [ballPosition, blocks]);
+  }, [state.ballPosition, state.blocks]);
 
-  // check for paddle collision
+  // Change Ball Direction if Hit Paddle
   useEffect(() => {
-    const [ballXAxis, ballYAxis] = ballPosition;
-    const [paddleXAxis, paddleYAxis] = paddlePosition;
+    const [ballXAxis, ballYAxis] = state.ballPosition;
+    const [paddleXAxis, paddleYAxis] = state.paddlePosition;
 
-    // try to stop the ball getting stuck in the paddle
     if (
-      ballXAxis + xDirectionRef.current > paddleXAxis &&
-      ballXAxis + xDirectionRef.current < paddleXAxis + BLOCK_WIDTH &&
-      ballYAxis + yDirectionRef.current > paddleYAxis &&
-      ballYAxis + yDirectionRef.current < paddleYAxis + BLOCK_HEIGHT
+      ballXAxis + state.xDirection > paddleXAxis &&
+      ballXAxis + state.xDirection < paddleXAxis + BLOCK_WIDTH &&
+      ballYAxis + state.yDirection > paddleYAxis &&
+      ballYAxis + state.yDirection < paddleYAxis + BLOCK_HEIGHT
     ) {
-      yDirectionRef.current = -yDirectionRef.current;
+      dispatch({ type: "CHANGE_Y_DIRECTION" });
     }
-  }, [ballPosition, paddlePosition]);
+  }, [state]);
 
-  // handle game over
+  // Game Over if Ball Hits Bottom of the Board
   useEffect(() => {
-    const [_xAxis, yAxis] = ballPosition;
+    const [, ballYAxis] = state.ballPosition;
 
-    if (yAxis <= 0) {
-      if (gameLoopRef.current) {
-        window.clearInterval(gameLoopRef.current);
-      }
-
-      // reset game state
-      setResult("GAME_OVER");
+    if (ballYAxis <= 0) {
+      dispatch({ type: "SET_RESULT", payload: "GAME_OVER" });
     }
-  }, [ballPosition]);
+  }, [state.ballPosition]);
 
-  // handle win
+  // Game Won if All Blocks are Removed
   useEffect(() => {
-    if (blocks.length === 0) {
-      if (gameLoopRef.current) {
-        window.clearInterval(gameLoopRef.current);
-      }
-
-      // reset game state
-      setResult("GAME_WON");
+    if (state.blocks.length === 0) {
+      dispatch({ type: "SET_RESULT", payload: "GAME_WON" });
     }
-  }, [blocks.length]);
+  }, [state.blocks.length]);
 
   return (
     <div className="py-8 h-full flex flex-col">
       <h2 className="text-2xl font-bold leading-7 text-white sm:truncate sm:text-3xl sm:tracking-tight">
         Breakout
       </h2>
-      <div>Score: {score}</div>
-      <div>Result: {result}</div>
+      <div>Score: {state.score}</div>
+      <div>Result: {state.result}</div>
       <div className="relative h-[300px] w-[560px]">
-        {blocks.map((block, index) => (
+        {state.blocks.map((block, index) => (
           <div
             key={index}
             className="w-[100px] h-[20px] bg-blue-400 absolute"
             style={{
-              left: blocks[index].bottomLeft[0],
-              bottom: blocks[index].bottomLeft[1],
+              left: state.blocks[index].bottomLeft[0],
+              bottom: state.blocks[index].bottomLeft[1],
             }}
           ></div>
         ))}
         <div
           className="w-[100px] h-[20px] bg-purple-400 absolute"
           style={{
-            left: paddlePosition[0],
-            bottom: paddlePosition[1],
+            left: state.paddlePosition[0],
+            bottom: state.paddlePosition[1],
           }}
         ></div>
         <div
           className="w-[20px] h-[20px] rounded-full bg-red-400 absolute"
           style={{
-            left: ballPosition[0],
-            bottom: ballPosition[1],
+            left: state.ballPosition[0],
+            bottom: state.ballPosition[1],
           }}
         ></div>
       </div>
