@@ -62,7 +62,7 @@ export default function Breakout() {
       switch (event.key) {
         case "ArrowLeft":
           setPaddlePosition((prev) => {
-            const nextPosition = prev[0] - 10;
+            const nextPosition = prev[0] - 20;
 
             // Don't let the paddle go off the board
             if (nextPosition > 0) {
@@ -75,7 +75,7 @@ export default function Breakout() {
 
         case "ArrowRight":
           setPaddlePosition((prev) => {
-            const nextPosition = prev[0] + 10;
+            const nextPosition = prev[0] + 20;
 
             // Don't let the paddle go off the board
             if (nextPosition < BOARD_WIDTH - BLOCK_WIDTH) {
@@ -104,7 +104,7 @@ export default function Breakout() {
 
         return [nextXAxis, nextYAxis];
       });
-    }, 30);
+    }, 20);
 
     return () => {
       if (gameLoopRef.current) {
@@ -141,9 +141,40 @@ export default function Breakout() {
         block.bottomLeft[1],
       ];
 
-      if (xAxis >= left && xAxis <= right && yAxis >= bottom && yAxis <= top) {
+      const ballRadius = BALL_DIAMETER / 2;
+
+      const isColliding =
+        xAxis + ballRadius >= left &&
+        xAxis - ballRadius <= right &&
+        yAxis + ballRadius >= bottom &&
+        yAxis - ballRadius <= top;
+
+      if (isColliding) {
+        // Change direction based on where the ball hits the block
+        const hitFromLeft = Math.abs(xAxis + ballRadius - left);
+        const hitFromRight = Math.abs(xAxis - ballRadius - right);
+        const hitFromTop = Math.abs(yAxis - ballRadius - top);
+        const hitFromBottom = Math.abs(yAxis + ballRadius - bottom);
+
+        const minHit = Math.min(
+          hitFromLeft,
+          hitFromRight,
+          hitFromTop,
+          hitFromBottom
+        );
+
+        switch (minHit) {
+          case hitFromLeft:
+          case hitFromRight:
+            xDirectionRef.current = -xDirectionRef.current;
+            break;
+          case hitFromTop:
+          case hitFromBottom:
+            yDirectionRef.current = -yDirectionRef.current;
+            break;
+        }
+
         setBlocks((prev) => prev.filter((_block, index) => index !== i));
-        changeDirection();
         setScore((prev) => prev + 1);
 
         break; // exit the loop after the first hit
@@ -166,18 +197,6 @@ export default function Breakout() {
       yDirectionRef.current = -yDirectionRef.current;
     }
   }, [ballPosition, paddlePosition]);
-
-  function changeDirection() {
-    if (xDirectionRef.current === 2 && yDirectionRef.current === 2) {
-      yDirectionRef.current = -2;
-    } else if (xDirectionRef.current === 2 && yDirectionRef.current === -2) {
-      xDirectionRef.current = -2;
-    } else if (xDirectionRef.current === -2 && yDirectionRef.current === -2) {
-      yDirectionRef.current = 2;
-    } else if (xDirectionRef.current === -2 && yDirectionRef.current === 2) {
-      xDirectionRef.current = 2;
-    }
-  }
 
   // handle game over
   useEffect(() => {
